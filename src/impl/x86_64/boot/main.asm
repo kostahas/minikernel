@@ -71,7 +71,6 @@ setup_page_tables:
 
 	mov ecx, 0
 .loop:
-
 	mov eax, 0x200000
 	mul ecx
 	or eax, 0b10000011

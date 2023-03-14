@@ -1,11 +1,11 @@
 #include "print.h"
 
-const static size_t NUM_ROWS = 25;
-const static size_t NUM_COLS = 80;
+const static size_t BUFFER_ROWS = 25;
+const static size_t BUFFER_COLS = 80;
 
 struct Char {
-    uint8_t character;
-    uint8_t color;
+    volatile uint8_t character;
+    volatile uint8_t color;
 };
 
 struct Char* terminalBuffer = (struct Char*) 0xb8000; // Video mem starts here.
@@ -18,13 +18,13 @@ void clear_row(size_t row) {
         color: color,
     };
 
-    for (size_t col = 0; col < NUM_COLS; col++) {
-        terminalBuffer[col + NUM_COLS * row] = empty;
+    for (size_t col = 0; col < BUFFER_COLS; col++) {
+        terminalBuffer[col + BUFFER_COLS * row] = empty;
     }
 }
 
 void print_clear() {
-    for (size_t i = 0; i < NUM_ROWS; i++) {
+    for (size_t i = 0; i < BUFFER_ROWS; i++) {
         clear_row(i);
     }
 }
@@ -32,32 +32,36 @@ void print_clear() {
 void print_newline() {
     col = 0;
 
-    if (row < NUM_ROWS - 1) {
+    if (row < BUFFER_ROWS - 1) {
         row++;
         return;
     }
 
-    for (size_t row = 1; row < NUM_ROWS; row++) {
-        for (size_t col = 0; col < NUM_COLS; col++) {
-            struct Char character = terminalBuffer[col + NUM_COLS * row];
-            terminalBuffer[col + NUM_COLS * (row - 1)] = character;
+    for (size_t row = 1; row < BUFFER_ROWS; row++) {
+        for (size_t col = 0; col < BUFFER_COLS; col++) {
+            struct Char character = terminalBuffer[col + BUFFER_COLS * row];
+            terminalBuffer[col + BUFFER_COLS * (row - 1)] = character;
         }
     }
 
-    clear_row(NUM_COLS - 1);
+    clear_row(BUFFER_COLS - 1);
 }
 
 void print_char(char character) {
+	switch (character) {
+		case '\n':
+			print_newline();
+	}
     if (character == '\n') {
         print_newline();
         return;
     }
 
-    if (col > NUM_COLS) {
+    if (col > BUFFER_COLS) {
         print_newline();
     }
 
-    terminalBuffer[col + NUM_COLS * row] = (struct Char) {
+    terminalBuffer[col + BUFFER_COLS * row] = (struct Char) {
         character: (uint8_t) character,
         color: color,
     };
